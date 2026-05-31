@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum OnboardingStatus {
+  PENDING
+  SUBMITTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(SALES)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  clients   Client[]
+  quotes    Quote[]
+}
+
+model Client {
+  id             String   @id @default(cuid())
+  companyName    String
+  tradingName    String?
+  registrationNo String?
+  vatNo          String?
+  contactPerson  String
+  email          String
+  phone          String
+  alternatePhone String?
+  address        String?
+  city           String?
+  province       String?
+  postalCode     String?
+  country        String   @default("South Africa")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  quotes         Quote[]
+}
+
+model Quote {
+  id            String      @id @default(cuid())
+  quoteNumber   String      @unique
+  clientId      String
+  client        Client      @relation(fields: [clientId], references: [id])
+  status        QuoteStatus @default(DRAFT)
+  contractTerm  Int
+  validUntil    DateTime?
+  notes         String?
+  internalNotes String?
+  totalOnceOff  Float       @default(0)
+  totalMonthly  Float       @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdById   String
+  createdBy     User        @relation(fields: [createdById], references: [id])
+  sentAt        DateTime?
+  acceptedAt    DateTime?
+  acceptToken   String?     @unique
+  items         QuoteItem[]
+  requiredDocs  QuoteRequiredDoc[]
+  uploadedDocs  ClientDocument[]
+  onboarding    Onboarding?
+}
+
+model QuoteItem {
+  id                 String  @id @default(cuid())
+  quoteId            String
+  quote              Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description        String
+  costPrice          Float   @default(0)
+  sellPrice          Float   @default(0)
+  isRecurring        Boolean @default(false)
+  recurringCostPrice Float?
+  recurringSellPrice Float?
+  sortOrder          Int     @default(0)
+}
+
+model DocumentType {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  description  String?
+  isActive     Boolean            @default(true)
+  requiredIn   QuoteRequiredDoc[]
+  uploaded     ClientDocument[]
+}
+
+model QuoteRequiredDoc {
+  id             String       @id @default(cuid())
+  quoteId        String
+  quote          Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  documentTypeId String
+  documentType   DocumentType @relation(fields: [documentTypeId], references: [id])
+
+  @@unique([quoteId, documentTypeId])
+}
+
+model ClientDocument {
+  id             String        @id @default(cuid())
+  quoteId        String
+  quote          Quote         @relation(fields: [quoteId], references: [id])
+  documentTypeId String?
+  documentType   DocumentType? @relation(fields: [documentTypeId], references: [id])
+  label          String?
+  fileName       String
+  originalName   String
+  filePath       String
+  fileSize       Int
+  mimeType       String
+  uploadedAt     DateTime      @default(now())
+}
+
+model Onboarding {
+  id             String           @id @default(cuid())
+  quoteId        String           @unique
+  quote          Quote            @relation(fields: [quoteId], references: [id])
+  token          String           @unique
+  status         OnboardingStatus @default(PENDING)
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  province       String?
+  postalCode     String?
+  vatNo          String?
+  registrationNo String?
+  bankName       String?
+  accountHolder  String?
+  accountNumber  String?
+  accountType    String?
+  branchCode     String?
+  cofSigned      Boolean          @default(false)
+  submittedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
