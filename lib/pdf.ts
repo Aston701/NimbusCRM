@@ -33,6 +33,17 @@ interface QuotePDFData {
   items: QuoteItem[]
   totalOnceOff: number
   totalMonthly: number
+  onboarding?: {
+    bankName?: string | null
+    accountHolder?: string | null
+    accountNumber?: string | null
+    accountType?: string | null
+    branchCode?: string | null
+    debitOrderAuthorized?: boolean
+    debitOrderSignature?: string | null
+    debitOrderSignedAt?: Date | null
+    debitOrderAmount?: number | null
+  } | null
 }
 
 function formatZAR(amount: number): string {
@@ -256,6 +267,68 @@ function buildPDF(quote: QuotePDFData, isCOF: boolean): Promise<Buffer> {
         const sx = leftCol + i * (sigW + 15)
         doc.moveTo(sx, y + 35).lineTo(sx + sigW, y + 35).strokeColor(DARK).lineWidth(0.75).stroke()
         doc.fillColor(GREY).fontSize(7.5).font('Helvetica').text(sigLabels[i], sx, y + 38, { width: sigW })
+      }
+      y += 55
+
+      // ─── DEBIT ORDER MANDATE ──────────────────────────────────────────
+      const ob = quote.onboarding
+      y += 10
+      doc.fillColor(BLUE).fontSize(9).font('Helvetica-Bold').text('DEBIT ORDER MANDATE', leftCol, y)
+      doc.moveTo(leftCol, y + 13).lineTo(leftCol + pageWidth, y + 13).strokeColor(LIGHT_BLUE).lineWidth(1).stroke()
+      y += 20
+
+      // Banking details
+      if (ob?.bankName || ob?.accountNumber) {
+        const bankRows: [string, string][] = [
+          ['Bank', ob.bankName || ''],
+          ['Account Holder', ob.accountHolder || ''],
+          ['Account Number', ob.accountNumber || ''],
+          ['Account Type', ob.accountType || ''],
+          ['Branch Code', ob.branchCode || ''],
+        ].filter(r => r[1]) as [string, string][]
+
+        for (const [label, value] of bankRows) {
+          doc.fillColor(GREY).fontSize(8).font('Helvetica').text(label + ':', leftCol, y, { width: 110 })
+          doc.fillColor(DARK).fontSize(8).font('Helvetica').text(value, leftCol + 115, y)
+          y += 12
+        }
+        y += 4
+      }
+
+      const debitAmount = ob?.debitOrderAmount ?? (quote.totalMonthly * 1.15)
+      doc.rect(leftCol, y, pageWidth, 45).fill('#eff6ff')
+      doc.fillColor(DARK).fontSize(7.5).font('Helvetica')
+        .text(
+          `I/We hereby authorise ${company.name} to debit my/our bank account detailed above on the 1st day of each month with the amount of ${formatZAR(debitAmount)} (inclusive of VAT), being the monthly service fee as per our signed agreement. This authority shall remain in force until cancelled by either party in writing with 30 (thirty) days' notice.`,
+          leftCol + 8, y + 6,
+          { width: pageWidth - 16 }
+        )
+      y += 52
+
+      // Signature line
+      if (ob?.debitOrderAuthorized && ob?.debitOrderSignature) {
+        doc.fillColor(GREY).fontSize(8).font('Helvetica').text('Authorised Signature:', leftCol, y)
+        y += 4
+        const sigData = ob.debitOrderSignature.replace(/^data:image\/png;base64,/, '')
+        const sigBuffer = Buffer.from(sigData, 'base64')
+        doc.image(sigBuffer, leftCol, y, { width: 160, height: 55 })
+
+        // Date alongside
+        if (ob.debitOrderSignedAt) {
+          doc.fillColor(GREY).fontSize(8).font('Helvetica')
+            .text('Date:', leftCol + 200, y + 20)
+          doc.fillColor(DARK).fontSize(8).font('Helvetica-Bold')
+            .text(format(new Date(ob.debitOrderSignedAt), 'dd MMM yyyy'), leftCol + 230, y + 20)
+        }
+        y += 60
+      } else {
+        const sdW = (pageWidth - 20) / 2
+        doc.moveTo(leftCol, y + 40).lineTo(leftCol + sdW, y + 40).strokeColor(DARK).lineWidth(0.75).stroke()
+        doc.moveTo(leftCol + sdW + 20, y + 40).lineTo(leftCol + pageWidth, y + 40).strokeColor(DARK).lineWidth(0.75).stroke()
+        doc.fillColor(GREY).fontSize(7.5).font('Helvetica')
+          .text('Authorised Signature', leftCol, y + 43, { width: sdW })
+          .text('Date', leftCol + sdW + 20, y + 43)
+        y += 55
       }
     }
 

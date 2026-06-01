@@ -14,6 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     include: {
       client: true,
       items: { orderBy: { sortOrder: 'asc' } },
+      onboarding: true,
     },
   })
 
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     items: quote.items,
     totalOnceOff: quote.totalOnceOff,
     totalMonthly: quote.totalMonthly,
+    onboarding: quote.onboarding,
   })
 
   return new NextResponse(new Uint8Array(pdfBuffer), {

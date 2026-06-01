@@ -182,6 +182,11 @@ export default function QuoteDetailPage() {
                   Submitted {format(new Date(quote.onboarding.submittedAt), 'dd MMM yyyy')}
                 </p>
               )}
+              {quote.onboarding.debitOrderAuthorized ? (
+                <p className="text-xs text-green-600 mt-1 font-medium">✓ Debit order authorised</p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Debit order not yet authorised</p>
+              )}
               <a
                 href={`/portal/${quote.onboarding.token}`}
                 target="_blank"

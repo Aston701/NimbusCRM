@@ -19,6 +19,9 @@ const submitSchema = z.object({
   accountType: z.string().optional(),
   branchCode: z.string().optional(),
   cofSigned: z.boolean().optional(),
+  debitOrderAuthorized: z.boolean().optional(),
+  debitOrderSignature: z.string().optional(),
+  debitOrderAmount: z.number().optional(),
 })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       ...parsed.data,
       status: 'SUBMITTED',
       submittedAt: new Date(),
+      debitOrderSignedAt: parsed.data.debitOrderAuthorized ? new Date() : undefined,
     },
   })
 

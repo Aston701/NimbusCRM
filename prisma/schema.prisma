@@ -153,8 +153,12 @@ model Onboarding {
   accountNumber  String?
   accountType    String?
   branchCode     String?
-  cofSigned      Boolean          @default(false)
-  submittedAt    DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  cofSigned               Boolean          @default(false)
+  debitOrderAuthorized    Boolean          @default(false)
+  debitOrderSignature     String?
+  debitOrderSignedAt      DateTime?
+  debitOrderAmount        Float?
+  submittedAt             DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
 }

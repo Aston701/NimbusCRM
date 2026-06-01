@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Building2,
   RefreshCw,
+  CreditCard,
 } from 'lucide-react'
+import SignaturePad from '@/components/SignaturePad'
 
 function formatZAR(n: number) {
   return `R ${n.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`
@@ -31,6 +33,8 @@ export default function ClientPortalPage() {
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, boolean>>({})
   const [formData, setFormData] = useState<Record<string, string>>({})
+  const [debitSignature, setDebitSignature] = useState<string | null>(null)
+  const [debitAuthorized, setDebitAuthorized] = useState(false)
 
   async function loadQuote() {
     const res = await fetch(`/api/portal/${token}`)
@@ -111,10 +115,22 @@ export default function ClientPortalPage() {
     setSubmitting(true)
     setError('')
 
+    if (debitAuthorized && !debitSignature) {
+      setError('Please draw your signature to authorize the debit order.')
+      setSubmitting(false)
+      return
+    }
+
     const res = await fetch(`/api/portal/${quote.onboarding?.token || token}/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...formData, cofSigned: true }),
+      body: JSON.stringify({
+        ...formData,
+        cofSigned: true,
+        debitOrderAuthorized: debitAuthorized,
+        debitOrderSignature: debitSignature || undefined,
+        debitOrderAmount: quote.totalMonthly * 1.15,
+      }),
     })
 
     if (!res.ok) {
@@ -478,6 +494,56 @@ export default function ClientPortalPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Debit Order Mandate */}
+              <div className="bg-white rounded-xl border border-blue-200 p-6">
+                <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-blue-500" /> Debit Order Authorisation
+                </h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Please read and sign below to authorise your monthly debit order.
+                </p>
+
+                {/* Mandate box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-gray-700 leading-relaxed">
+                  <p className="font-semibold text-blue-900 mb-2">DEBIT ORDER MANDATE</p>
+                  <p>
+                    I/We, <strong>{quote.client.contactPerson}</strong> of{' '}
+                    <strong>{quote.client.companyName}</strong>, hereby authorise{' '}
+                    <strong>{company.name}</strong> to debit my/our bank account as detailed
+                    above on the <strong>1st day of each month</strong>, with the amount of{' '}
+                    <strong>{formatZAR(quote.totalMonthly * 1.15)}</strong> (inclusive of VAT),
+                    being the monthly service fee as per our signed agreement.
+                  </p>
+                  <p className="mt-2">
+                    This authority shall remain in force until cancelled by either party in
+                    writing with <strong>30 (thirty) days&apos; notice</strong>. I/We confirm
+                    that the bank account details provided are correct and that I/we are
+                    authorised to sign this mandate.
+                  </p>
+                </div>
+
+                {/* Authorise checkbox */}
+                <label className="flex items-start gap-3 mb-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 w-4 h-4 rounded text-blue-600"
+                    checked={debitAuthorized}
+                    onChange={e => setDebitAuthorized(e.target.checked)}
+                  />
+                  <span className="text-sm text-gray-700">
+                    I confirm I have read and agree to the debit order mandate above.
+                  </span>
+                </label>
+
+                {/* Signature */}
+                {debitAuthorized && (
+                  <SignaturePad
+                    label="Sign here to authorise"
+                    onChange={setDebitSignature}
+                  />
+                )}
               </div>
 
               {/* Document Uploads */}
