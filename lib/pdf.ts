@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 
 interface QuoteItem {
   description: string
+  quantity?: number
   costPrice: number
   sellPrice: number
   isRecurring: boolean
@@ -148,17 +149,22 @@ function buildPDF(quote: QuotePDFData, isCOF: boolean): Promise<Buffer> {
       // Table header
       doc.rect(leftCol, y, pageWidth, 20).fill(BLUE)
       doc.fillColor(WHITE).fontSize(8).font('Helvetica-Bold')
-        .text('Description', leftCol + 8, y + 6, { width: pageWidth - 120 })
-        .text('Amount (excl. VAT)', leftCol + pageWidth - 112, y + 6, { width: 108, align: 'right' })
+        .text('Description', leftCol + 8, y + 6, { width: pageWidth - 190 })
+        .text('Qty', leftCol + pageWidth - 182, y + 6, { width: 40, align: 'center' })
+        .text('Unit Price', leftCol + pageWidth - 138, y + 6, { width: 70, align: 'right' })
+        .text('Total (excl. VAT)', leftCol + pageWidth - 68, y + 6, { width: 60, align: 'right' })
       y += 20
 
       for (let i = 0; i < onceOffItems.length; i++) {
         const item = onceOffItems[i]
+        const qty = item.quantity ?? 1
         const rowH = 20
         if (i % 2 === 1) doc.rect(leftCol, y, pageWidth, rowH).fill(LIGHT_GREY)
         doc.fillColor(DARK).fontSize(8).font('Helvetica')
-          .text(item.description, leftCol + 8, y + 6, { width: pageWidth - 120 })
-          .text(formatZAR(item.sellPrice), leftCol + pageWidth - 112, y + 6, { width: 108, align: 'right' })
+          .text(item.description, leftCol + 8, y + 6, { width: pageWidth - 190 })
+          .text(String(qty), leftCol + pageWidth - 182, y + 6, { width: 40, align: 'center' })
+          .text(formatZAR(item.sellPrice), leftCol + pageWidth - 138, y + 6, { width: 70, align: 'right' })
+          .text(formatZAR(item.sellPrice * qty), leftCol + pageWidth - 68, y + 6, { width: 60, align: 'right' })
         doc.moveTo(leftCol, y + rowH).lineTo(leftCol + pageWidth, y + rowH).strokeColor('#e5e7eb').lineWidth(0.5).stroke()
         y += rowH
       }
@@ -173,17 +179,23 @@ function buildPDF(quote: QuotePDFData, isCOF: boolean): Promise<Buffer> {
 
       doc.rect(leftCol, y, pageWidth, 20).fill(BLUE)
       doc.fillColor(WHITE).fontSize(8).font('Helvetica-Bold')
-        .text('Description', leftCol + 8, y + 6, { width: pageWidth - 120 })
-        .text('Monthly (excl. VAT)', leftCol + pageWidth - 112, y + 6, { width: 108, align: 'right' })
+        .text('Description', leftCol + 8, y + 6, { width: pageWidth - 190 })
+        .text('Qty', leftCol + pageWidth - 182, y + 6, { width: 40, align: 'center' })
+        .text('Unit Price/mo', leftCol + pageWidth - 138, y + 6, { width: 70, align: 'right' })
+        .text('Total/mo (excl. VAT)', leftCol + pageWidth - 68, y + 6, { width: 60, align: 'right' })
       y += 20
 
       for (let i = 0; i < recurringItems.length; i++) {
         const item = recurringItems[i]
+        const qty = item.quantity ?? 1
+        const unitPrice = item.recurringSellPrice ?? 0
         const rowH = 20
         if (i % 2 === 1) doc.rect(leftCol, y, pageWidth, rowH).fill(LIGHT_GREY)
         doc.fillColor(DARK).fontSize(8).font('Helvetica')
-          .text(item.description, leftCol + 8, y + 6, { width: pageWidth - 120 })
-          .text(formatZAR(item.recurringSellPrice ?? 0), leftCol + pageWidth - 112, y + 6, { width: 108, align: 'right' })
+          .text(item.description, leftCol + 8, y + 6, { width: pageWidth - 190 })
+          .text(String(qty), leftCol + pageWidth - 182, y + 6, { width: 40, align: 'center' })
+          .text(formatZAR(unitPrice), leftCol + pageWidth - 138, y + 6, { width: 70, align: 'right' })
+          .text(formatZAR(unitPrice * qty), leftCol + pageWidth - 68, y + 6, { width: 60, align: 'right' })
         doc.moveTo(leftCol, y + rowH).lineTo(leftCol + pageWidth, y + rowH).strokeColor('#e5e7eb').lineWidth(0.5).stroke()
         y += rowH
       }

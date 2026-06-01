@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Building2,
   UserCog,
+  Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +19,7 @@ const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
   { href: '/clients', label: 'Clients', icon: Users, adminOnly: false },
   { href: '/quotes', label: 'Quotes', icon: FileText, adminOnly: false },
+  { href: '/products', label: 'Products', icon: Package, adminOnly: true },
   { href: '/users', label: 'Users', icon: UserCog, adminOnly: true },
 ]
 

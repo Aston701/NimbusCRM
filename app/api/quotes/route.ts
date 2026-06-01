@@ -6,7 +6,9 @@ import { generateQuoteNumber } from '@/lib/utils'
 import { z } from 'zod'
 
 const itemSchema = z.object({
+  productId: z.string().optional().nullable(),
   description: z.string().min(1),
+  quantity: z.number().int().min(1).default(1),
   costPrice: z.number().min(0),
   sellPrice: z.number().min(0),
   isRecurring: z.boolean().default(false),
@@ -61,9 +63,9 @@ export async function POST(req: NextRequest) {
 
   const { items, requiredDocIds, validUntil, ...quoteData } = parsed.data
 
-  const totalOnceOff = items.reduce((sum, i) => sum + i.sellPrice, 0)
+  const totalOnceOff = items.reduce((sum, i) => sum + i.sellPrice * (i.quantity ?? 1), 0)
   const totalMonthly = items.reduce(
-    (sum, i) => sum + (i.isRecurring ? (i.recurringSellPrice ?? 0) : 0),
+    (sum, i) => sum + (i.isRecurring ? (i.recurringSellPrice ?? 0) * (i.quantity ?? 1) : 0),
     0
   )
 
